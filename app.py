@@ -25,14 +25,23 @@ def load_data():
 # Run our function and save the cleaned df to 'df_nyc'
 df_force = load_data()
 
-df_exp = df_force.groupby(['precinct','complainant_ethnicity','complainant_gender']).size().rename('cases').reset_index()
-df_mos = df_force.groupby(['precinct','mos_ethnicity','mos_gender']).size().rename('cases').reset_index()
-
-st.sidebar.title('Settings')
-st.sidebar.write('Check it out')
+st.sidebar.title('Welcome to ___ !')
+st.sidebar.write('Take a look at the number of "Use of Force" events by PD and Precinct.')
 st.sidebar.markdown('-------')
+st.sidebar.write('Year(s)')
 
+min_year = int(df_force['year_received'].min())
+max_year = int(df_force['year_received'].max())
 
+year_filter_min, year_filter_max = st.sidebar.slider('(Select a range or single year)', min_year, max_year, [max_year-1, max_year])
+
+df_exp = df_force[(df_force['year_received'] <= year_filter_max) & (df_force['year_received'] >= year_filter_min)]
+df_exp = df_exp.groupby(['precinct','complainant_ethnicity','complainant_gender']).size().rename('cases').reset_index()
+
+df_mos = df_force[(df_force['year_received'] <= year_filter_max) & (df_force['year_received'] >= year_filter_min)]
+df_mos = df_mos.groupby(['precinct','mos_ethnicity','mos_gender']).size().rename('cases').reset_index()
+
+st.sidebar.markdown('-------')
 st.sidebar.write('Select a Precinct')
 
 # Creating the selectbox and giving the dropdown options to choose from
@@ -55,10 +64,10 @@ f'''
 '''
 
 st.sidebar.markdown('-------')
-st.sidebar.write('Cases by:')
+st.sidebar.write('Would you like to group the cases by the race of the Subjects or Officers?')
 side = st.sidebar.selectbox("", ('Subjects', 'Officers'))
 st.sidebar.markdown('-------')
-st.sidebar.write('Group Cases by Gender?')
+st.sidebar.write('Would you like to see a breakdown of the cases by gender?')
 option = st.sidebar.selectbox("", ('No', 'Yes'))
 st.sidebar.markdown('-------')
 
@@ -166,9 +175,9 @@ if option == 'Yes':
         st.plotly_chart(fig)
 
 
-if st.sidebar.checkbox(f'Precinct {selected_precinct} Case Details'):
+# if st.sidebar.checkbox(f'Precinct {selected_precinct} Case Details'):
 
-    st.markdown('-------')
-    st.title(f'Precinct {selected_precinct} Cases')
+#     st.markdown('-------')
+#     st.title(f'Precinct {selected_precinct} Cases')
 
-    st.dataframe(df_force[df_force['precinct'] == selected_precinct])
+#     st.dataframe(df_force[df_force['precinct'] == selected_precinct])
