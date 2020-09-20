@@ -25,8 +25,8 @@ def load_data():
 # Run our function and save the cleaned df to 'df_nyc'
 df_force = load_data()
 
-st.sidebar.title('Welcome to ___ !')
-st.sidebar.write('Take a look at the number of "Use of Force" events by PD and Precinct.')
+st.sidebar.title('NYPD Quick Lookup :sleuth_or_spy:')
+st.sidebar.write("On this page you can further explore NYPD's force complaint cases by precinct.")
 st.sidebar.markdown('-------')
 st.sidebar.write('Year(s)')
 
@@ -35,11 +35,11 @@ max_year = int(df_force['year_received'].max())
 
 year_filter_min, year_filter_max = st.sidebar.slider('(Select a range or single year)', min_year, max_year, [max_year-1, max_year])
 
-df_exp = df_force[(df_force['year_received'] <= year_filter_max) & (df_force['year_received'] >= year_filter_min)]
-df_exp = df_exp.groupby(['precinct','complainant_ethnicity','complainant_gender']).size().rename('cases').reset_index()
+df_exp_set = df_force[(df_force['year_received'] <= year_filter_max) & (df_force['year_received'] >= year_filter_min)]
+df_exp = df_exp_set.groupby(['precinct','complainant_ethnicity','complainant_gender']).size().rename('cases').reset_index()
 
-df_mos = df_force[(df_force['year_received'] <= year_filter_max) & (df_force['year_received'] >= year_filter_min)]
-df_mos = df_mos.groupby(['precinct','mos_ethnicity','mos_gender']).size().rename('cases').reset_index()
+# df_mos = df_force[(df_force['year_received'] <= year_filter_max) & (df_force['year_received'] >= year_filter_min)]
+df_mos = df_exp_set.groupby(['precinct','mos_ethnicity','mos_gender']).size().rename('cases').reset_index()
 
 st.sidebar.markdown('-------')
 st.sidebar.write('Select a Precinct')
@@ -67,7 +67,7 @@ st.sidebar.markdown('-------')
 st.sidebar.write('Would you like to group the cases by the race of the Subjects or Officers?')
 side = st.sidebar.selectbox("", ('Subjects', 'Officers'))
 st.sidebar.markdown('-------')
-st.sidebar.write('Would you like to see a breakdown of the cases by gender?')
+st.sidebar.write('Would you like to see a breakdown of the cases by gender of the subjects/officers?')
 option = st.sidebar.selectbox("", ('No', 'Yes'))
 st.sidebar.markdown('-------')
 
@@ -175,9 +175,55 @@ if option == 'Yes':
         st.plotly_chart(fig)
 
 
-# if st.sidebar.checkbox(f'Precinct {selected_precinct} Case Details'):
+if st.sidebar.checkbox(f'NYPD-specific Extra Features'):
 
-#     st.markdown('-------')
-#     st.title(f'Precinct {selected_precinct} Cases')
+    st.markdown('-------')
+    st.title(f' :police_car: Precinct {selected_precinct} Continued :police_car: \n\n\n ')
 
-#     st.dataframe(df_force[df_force['precinct'] == selected_precinct])
+    this = df_exp_set[['shield_no','rank_incident','mos_ethnicity','mos_gender','mos_age_incident','complainant_ethnicity','complainant_gender','complainant_age_incident','allegation','board_disposition']]
+
+    this.columns = ['Shield Number','Officer Rank','Officer Race','Officer Gender','Officer Age','Subject Race','Subject Gender','Subject Age','Allegation','Board Decision']
+
+    this['Board Decision'] = this['Board Decision'].str.split(n=1, expand=True)[0]
+
+    ya = this.groupby(['Officer Race', 'Board Decision']).size().rename('Percentage')
+
+    decision = ya.groupby(level=0).apply(lambda x:100 * x / float(x.sum()))
+    decision = decision.reset_index()
+
+    st.sidebar.write('Select Extra')
+    option_again = st.sidebar.selectbox("", ('Precinct Complaint Outcomes', 'Officer Search'))
+    st.sidebar.markdown('-------')
+
+    if option_again == 'Precinct Complaint Outcomes':
+
+        fig = px.bar(decision, x="Percentage", y="Officer Race", orientation='h', text='Board Decision', color='Board Decision',width=1000)
+        fig.update_layout(paper_bgcolor = 'rgba(0,0,0,0)', plot_bgcolor = 'rgba(0,0,0,0)',
+            title="Board Decision Percentages by Officer Race",
+            yaxis_title="",
+            xaxis_title="",
+            font=dict(family="Arial Black",
+                size=14,
+                color="black"
+            ), showlegend=False
+        )
+        fig.update_traces(textfont_size=12)
+        fig.update_xaxes(showgrid=False, zeroline=False, gridcolor='white', showticklabels=False)
+        fig.update_yaxes(showgrid=False, zeroline=False, ticklen=10, ticks="outside", tickcolor='rgba(0,0,0,0)')
+        st.plotly_chart(fig) 
+
+    if option_again == 'Officer Search':
+
+        # st.sidebar.   
+
+    # cols = list(this.columns)
+    # st_ms = st.multiselect("Columns", df.columns.tolist(), default=cols)
+    # st.dataframe(df_force[df_force['precinct'] == selected_precinct])
+
+        df_force = df_force[['shield_no','rank_incident','mos_ethnicity','mos_gender','mos_age_incident','complainant_ethnicity','complainant_gender','complainant_age_incident','allegation','board_disposition']]
+
+        df_force.columns = ['Shield Number','Officer Rank','Officer Race','Officer Gender','Officer Age','Subject Race','Subject Gender','Subject Age','Allegation','Board Decision']
+
+        user_input = st.sidebar.multiselect('Shield Number', list(this['Shield Number'].unique()), 0)
+
+        st.dataframe(df_force[df_force['Shield Number'] == user_input])
