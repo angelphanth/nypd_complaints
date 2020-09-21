@@ -211,17 +211,17 @@ if selected_precinct in df_census.columns:
     fig = px.bar(income, y ='Household', x='Median Income', orientation='h', text='Median Income', width=800, height=400)
 
     fig.update_layout(paper_bgcolor = 'rgba(0,0,0,0)', plot_bgcolor = 'rgba(0,0,0,0)',
-        # title=f"Median Income for Borough: {ok[-1]}",
+        title=f"2018 Median Income for Borough: {ok[-1]}",
         xaxis_title="Median Income ($)",
         yaxis_title="Household Type",
         font=dict(family="Arial Black",
             size=18,
-            color="white"
+            color="black"
         ), 
     )
 
-    fig.update_traces(marker_color='white')
-    fig.update_xaxes(showgrid=True, zeroline=False, gridcolor='white')
+    fig.update_traces(marker_color='black')
+    fig.update_xaxes(showgrid=True, zeroline=False, gridcolor='grey')
     fig.update_yaxes(showgrid=False, zeroline=False, ticklen=10, ticks="outside", tickcolor='rgba(0,0,0,0)')
 
     st.plotly_chart(fig)
