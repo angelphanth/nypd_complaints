@@ -2,11 +2,12 @@ import streamlit as st
 import numpy as np 
 import pandas as pd 
 import plotly.express as px
+import plotly.graph_objects as go
 
 st.markdown("""
 <style>
 body {
-    background-color: #cce6ff;
+    background-color: darkgray;
 }
 </style>
     """, unsafe_allow_html=True)
@@ -174,6 +175,62 @@ if option == 'Yes':
 
         st.plotly_chart(fig)
 
+df_info = df_force[df_force['precinct']== selected_precinct]
+
+df_census = pd.read_csv('nypd_pop_2010.csv', index_col=0)
+df_income = pd.read_csv('borough_income_2018.csv', index_col=0)
+
+st.title('Census Data')
+if selected_precinct in df_census.columns:
+    ok = df_census[str(selected_precinct)]
+    other = ok.reset_index()[2:-1]
+    other.columns = ['Race', 'Population']
+
+    pop = go.Figure(data=[go.Pie(labels=other['Race'], values=other['Population'])])
+
+    pop.update_layout(paper_bgcolor = 'rgba(0,0,0,0)', plot_bgcolor = 'rgba(0,0,0,0)',
+            title=f"Precinct {selected_precinct} Population 2010",
+            yaxis_title="",
+            xaxis_title="",
+            font=dict(family="Arial Black",
+                size=14,
+                color="black"
+            ), showlegend=True, legend=dict(
+    orientation="h",
+    yanchor="bottom",
+    xanchor="right",
+    x=3))
+    st.plotly_chart(pop)
+
+    so = df_income[ok[-1]]
+    income = so.reset_index()
+    income.columns = ['Household','Median Income']
+    
+    st.title(f'Borough: {ok[-1]}')
+
+    fig = px.bar(income, y ='Household', x='Median Income', orientation='h', text='Median Income', width=800, height=400)
+
+    fig.update_layout(paper_bgcolor = 'rgba(0,0,0,0)', plot_bgcolor = 'rgba(0,0,0,0)',
+        # title=f"Median Income for Borough: {ok[-1]}",
+        xaxis_title="Median Income ($)",
+        yaxis_title="Household Type",
+        font=dict(family="Arial Black",
+            size=18,
+            color="white"
+        ), 
+    )
+
+    fig.update_traces(marker_color='white')
+    fig.update_xaxes(showgrid=True, zeroline=False, gridcolor='white')
+    fig.update_yaxes(showgrid=False, zeroline=False, ticklen=10, ticks="outside", tickcolor='rgba(0,0,0,0)')
+
+    st.plotly_chart(fig)
+
+
+
+if selected_precinct not in df_census.columns:
+    st.write(f'No census data for precinct {selected_precinct}')
+
 
 if st.sidebar.checkbox(f'NYPD-specific Extra Features'):
 
@@ -214,16 +271,14 @@ if st.sidebar.checkbox(f'NYPD-specific Extra Features'):
 
     if option_again == 'Officer Search':
 
-        # st.sidebar.   
 
-    # cols = list(this.columns)
-    # st_ms = st.multiselect("Columns", df.columns.tolist(), default=cols)
-    # st.dataframe(df_force[df_force['precinct'] == selected_precinct])
+        df_force = df_force[['shield_no','first_name','last_name','rank_incident','mos_ethnicity','mos_gender','mos_age_incident','complainant_ethnicity','complainant_gender','complainant_age_incident','allegation','year_received','board_disposition']]
 
-        df_force = df_force[['shield_no','rank_incident','mos_ethnicity','mos_gender','mos_age_incident','complainant_ethnicity','complainant_gender','complainant_age_incident','allegation','board_disposition']]
+        df_force.columns = ['Shield Number','Officer First Name','Officer Last Name','Officer Rank','Officer Race','Officer Gender','Officer Age','Subject Race','Subject Gender','Subject Age','Allegation','Year Complaint Received','Board Decision']
 
-        df_force.columns = ['Shield Number','Officer Rank','Officer Race','Officer Gender','Officer Age','Subject Race','Subject Gender','Subject Age','Allegation','Board Decision']
-
-        user_input = st.sidebar.multiselect('Shield Number', list(this['Shield Number'].unique()), 0)
+        st.sidebar.write('Enter Shield (Badge) Number for Complaint History')
+        user_input = st.sidebar.selectbox('', list(this['Shield Number'].unique()), 0)
 
         st.dataframe(df_force[df_force['Shield Number'] == user_input])
+
+
